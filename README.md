@@ -1,9 +1,3 @@
-# Property Management CRUD
-
-Un sistema **CRUD** completo para la gestión de propiedades.  
-Permite **crear, leer, actualizar y eliminar propiedades** a través de una API REST con frontend sencillo en **HTML + Bootstrap**.
-
----
 
 ## Resumen del Proyecto
 
