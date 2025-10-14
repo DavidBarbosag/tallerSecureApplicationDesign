@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Propiedades</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>CRUD de Propiedades</h1>
+        <button class="btn btn-danger" onclick="logout()">Cerrar sesión</button>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="propertyForm">
+                <input type="hidden" id="propertyId">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Nombre</label>
+                    <input type="text" class="form-control" id="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label">Dirección</label>
+                    <input type="text" class="form-control" id="address" required>
+                </div>
+                <div class="mb-3">
+                    <label for="price" class="form-label">Precio</label>
+                    <input type="number" class="form-control" id="price" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Descripción</label>
+                    <textarea class="form-control" id="description" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <button type="button" class="btn btn-secondary" onclick="resetForm()">Cancelar</button>
+            </form>
+        </div>
+    </div>
+
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Dirección</th>
+            <th>Precio</th>
+            <th>Descripción</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody id="propertyTableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    const API_URL = "https://sadapp.ddns.net/api/items";
+    const token = localStorage.getItem("jwt");
+
+    if (!token) {
+        alert("Debes iniciar sesión primero.");
+        window.location.href = "login.html";
+    }
+
+    async function loadProperties() {
+        try {
+            const res = await fetch(API_URL, {
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (!res.ok) {
+                if (res.status === 401) {
+                    alert("Sesión expirada. Inicia sesión nuevamente.");
+                    logout();
+                    return;
+                }
+                throw new Error("Error cargando propiedades");
+            }
+            const data = await res.json();
+            const tbody = document.getElementById("propertyTableBody");
+            tbody.innerHTML = "";
+            data.forEach(item => {
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>${item.address}</td>
+                    <td>$${item.price}</td>
+                    <td>${item.description || ""}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning"
+                            onclick="editProperty(${item.id}, '${encodeURIComponent(item.name)}', '${encodeURIComponent(item.address)}', ${item.price}, '${encodeURIComponent(item.description || "")}')">
+                            Editar
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteProperty(${item.id})">Eliminar</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            alert("No se pudo cargar la lista de propiedades.");
+            console.error(error);
+        }
+    }
+
+    async function deleteProperty(id) {
+        if (!confirm("¿Seguro que deseas eliminar esta propiedad?")) return;
+        try {
+            const res = await fetch(`${API_URL}/${id}`, {
+                method: "DELETE",
+                headers: { "Authorization": "Bearer " + token }
+            });
+            if (!res.ok) throw new Error("Error eliminando propiedad");
+            loadProperties();
+        } catch (error) {
+            alert("No se pudo eliminar la propiedad.");
+            console.error(error);
+        }
+    }
+
+    function editProperty(id, name, address, price, description) {
+        document.getElementById("propertyId").value = id;
+        document.getElementById("name").value = decodeURIComponent(name);
+        document.getElementById("address").value = decodeURIComponent(address);
+        document.getElementById("price").value = price;
+        document.getElementById("description").value = decodeURIComponent(description);
+    }
+
+    function resetForm() {
+        document.getElementById("propertyId").value = "";
+        document.getElementById("propertyForm").reset();
+    }
+
+    document.getElementById("propertyForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const id = document.getElementById("propertyId").value;
+        const item = {
+            name: document.getElementById("name").value,
+            address: document.getElementById("address").value,
+            price: parseFloat(document.getElementById("price").value),
+            description: document.getElementById("description").value
+        };
+
+        try {
+            let res;
+            if (id) {
+                res = await fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify(item)
+                });
+            } else {
+                res = await fetch(API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": "Bearer " + token
+                    },
+                    body: JSON.stringify(item)
+                });
+            }
+
+            if (!res.ok) throw new Error("Error al guardar la propiedad");
+            resetForm();
+            loadProperties();
+        } catch (error) {
+            alert("Error guardando la propiedad.");
+            console.error(error);
+        }
+    });
+
+    function logout() {
+        localStorage.removeItem("jwt");
+        window.location.href = "login.html";
+    }
+
+    loadProperties();
+</script>
+</body>
+</html>

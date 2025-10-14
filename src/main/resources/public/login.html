@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+    <script>
+        async function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            const response = await fetch("https://sadapp.ddns.net/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) {
+                alert("Usuario o contraseña incorrectos");
+                return;
+            }
+
+            const data = await response.json();
+            localStorage.setItem("jwt", data.token);
+            window.location.href = "home.html";
+        }
+    </script>
+</head>
+<body>
+<h2>Login</h2>
+<input id="username" placeholder="Usuario"><br>
+<input id="password" type="password" placeholder="Contraseña"><br>
+<button onclick="login()">Iniciar Sesión</button>
+</body>
+</html>
