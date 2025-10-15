@@ -45,5 +45,12 @@ public class UserService implements UserDetailsService {
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
     }
+
+    public boolean login(String username, String rawPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+        return passwordEncoder.matches(rawPassword, user.getPassword());
+    }
+
 }
 
