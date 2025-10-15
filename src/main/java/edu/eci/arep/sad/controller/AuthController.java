@@ -22,16 +22,18 @@ public class AuthController {
 
     @PostMapping("/login")
     public Map<String, String> login(@RequestBody Map<String, String> user) {
+        String username = user.get("username");
+        String password = user.get("password");
+
         try {
-            System.out.println("🟢 Intentando login con usuario: " + user.get("username"));
-            boolean ok = userService.login(user.get("username"), user.get("password"));
+            boolean ok = userService.login(username, password);
             if (ok) {
                 return Map.of("message", "Login exitoso");
             } else {
                 return Map.of("error", "Credenciales inválidas");
             }
         } catch (Exception e) {
-            e.printStackTrace(); // 👈 Esto mostrará la causa real en app.log
+            e.printStackTrace();
             return Map.of("error", "Error interno: " + e.getMessage());
         }
     }
